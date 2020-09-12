@@ -137,8 +137,13 @@ impl Backtrace {
     /// enabled, and the `std` feature is enabled by default.
     #[inline(never)] // want to make sure there's a frame here to remove
     pub fn new() -> Backtrace {
-        let mut bt = Self::create(Self::new as usize);
-        bt.resolve_omit(Self::new as usize);
+        Self::new_omitting(Self::new as usize)
+    }
+
+    #[inline(never)]
+    pub fn new_omitting(ip: usize) -> Backtrace {
+        let mut bt = Self::create(ip);
+        bt.resolve_omit(ip);
         bt
     }
 
