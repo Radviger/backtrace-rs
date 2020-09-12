@@ -222,7 +222,7 @@ impl Backtrace {
 
     fn resolve_omit(&mut self, ip: usize) {
         let mut actual_start_index = None;
-        for (f, frame) in self.frames.iter_mut().filter(|f| f.symbols.is_none()).enumerate() {
+        for (f, frame) in self.frames.iter_mut().enumerate().filter(|(_, f)| f.symbols.is_none()) {
             let mut symbols = Vec::new();
             {
                 let sym = |symbol: &Symbol| {
