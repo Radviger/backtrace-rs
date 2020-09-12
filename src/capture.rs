@@ -242,7 +242,7 @@ impl Backtrace {
                 }
             }
             if ip != 0 && symbols.iter().any(|s| s.addr == Some(ip)) && self.actual_start_index == 0 {
-                self.actual_start_index = f;
+                self.actual_start_index = f + 1;
             }
             frame.symbols = Some(symbols);
         }
