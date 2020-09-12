@@ -140,6 +140,7 @@ impl Backtrace {
         Self::new_starting_from(Self::new as usize, true)
     }
 
+    /// Same as `Backtrace::new()` but with ability to set starting frame pointer
     pub fn new_starting_from(ip: usize, inclusive: bool) -> Backtrace {
         let mut bt = Self::create(ip, inclusive);
         bt.resolve();
@@ -174,7 +175,7 @@ impl Backtrace {
         Self::create(Self::new_unresolved as usize, true)
     }
 
-    fn create(ip: usize, inclusive: boolean) -> Backtrace {
+    fn create(ip: usize, inclusive: bool) -> Backtrace {
         let mut frames = Vec::new();
         let mut actual_start_index = None;
         trace(|frame| {
