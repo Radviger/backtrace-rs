@@ -140,7 +140,6 @@ impl Backtrace {
         Self::new_starting_from(Self::new as usize, true)
     }
 
-    #[inline(never)]
     pub fn new_starting_from(ip: usize, inclusive: bool) -> Backtrace {
         let mut bt = Self::create(ip);
         bt.resolve_starting_from(ip, inclusive);
@@ -246,7 +245,7 @@ impl Backtrace {
                     }
                 }
             }
-            if ip != 0 && symbols.iter().any(|s| s.addr == Some(ip)) && self.actual_start_index == 0 {
+            if ip != 0 && frame.symbol_address() as usize == ip && self.actual_start_index == 0 {
                 self.actual_start_index = if inclusive { f + 1 } else { f };
             }
             frame.symbols = Some(symbols);
