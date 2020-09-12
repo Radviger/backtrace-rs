@@ -138,7 +138,7 @@ impl Backtrace {
     #[inline(never)] // want to make sure there's a frame here to remove
     pub fn new() -> Backtrace {
         let mut bt = Self::create(Self::new as usize);
-        bt.resolve();
+        bt.resolve_omit(Self::new as usize);
         bt
     }
 
@@ -205,6 +205,7 @@ impl Backtrace {
         &self.frames[self.actual_start_index..]
     }
 
+
     /// If this backtrace was created from `new_unresolved` then this function
     /// will resolve all addresses in the backtrace to their symbolic names.
     ///
@@ -216,7 +217,12 @@ impl Backtrace {
     /// This function requires the `std` feature of the `backtrace` crate to be
     /// enabled, and the `std` feature is enabled by default.
     pub fn resolve(&mut self) {
-        for frame in self.frames.iter_mut().filter(|f| f.symbols.is_none()) {
+        self.resolve_omit(0);
+    }
+
+    fn resolve_omit(&mut self, ip: usize) {
+        let mut actual_start_index = None;
+        for (f, frame) in self.frames.iter_mut().filter(|f| f.symbols.is_none()).enumerate() {
             let mut symbols = Vec::new();
             {
                 let sym = |symbol: &Symbol| {
@@ -235,7 +241,13 @@ impl Backtrace {
                     }
                 }
             }
+            if ip != 0 && symbols.iter().any(|s| s.addr == Some(ip)) && self.actual_start_index == 0 {
+                self.actual_start_index = f;
+            }
             frame.symbols = Some(symbols);
+        }
+        if let Some(actual_start_index) = actual_start_index {
+            self.actual_start_index = actual_start_index;
         }
     }
 }
