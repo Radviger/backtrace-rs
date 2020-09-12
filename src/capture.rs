@@ -141,8 +141,8 @@ impl Backtrace {
     }
 
     pub fn new_starting_from(ip: usize, inclusive: bool) -> Backtrace {
-        let mut bt = Self::create(ip);
-        bt.resolve_starting_from(ip, inclusive);
+        let mut bt = Self::create(ip, inclusive);
+        bt.resolve();
         bt
     }
 
@@ -171,10 +171,10 @@ impl Backtrace {
     /// enabled, and the `std` feature is enabled by default.
     #[inline(never)] // want to make sure there's a frame here to remove
     pub fn new_unresolved() -> Backtrace {
-        Self::create(Self::new_unresolved as usize)
+        Self::create(Self::new_unresolved as usize, true)
     }
 
-    fn create(ip: usize) -> Backtrace {
+    fn create(ip: usize, inclusive: boolean) -> Backtrace {
         let mut frames = Vec::new();
         let mut actual_start_index = None;
         trace(|frame| {
@@ -184,7 +184,8 @@ impl Backtrace {
             });
 
             if frame.symbol_address() as usize == ip && actual_start_index.is_none() {
-                actual_start_index = Some(frames.len());
+                let len = frames.len();
+                actual_start_index = Some(if inclusive { len } else { len - 1 });
             }
             true
         });
@@ -221,12 +222,8 @@ impl Backtrace {
     /// This function requires the `std` feature of the `backtrace` crate to be
     /// enabled, and the `std` feature is enabled by default.
     pub fn resolve(&mut self) {
-        self.resolve_starting_from(0, false);
-    }
-
-    fn resolve_starting_from(&mut self, ip: usize, inclusive: bool) {
         let mut actual_start_index = None;
-        for (f, frame) in self.frames.iter_mut().enumerate().filter(|(_, f)| f.symbols.is_none()) {
+        for frame in self.frames.iter_mut().filter(|f| f.symbols.is_none()) {
             let mut symbols = Vec::new();
             {
                 let sym = |symbol: &Symbol| {
@@ -244,9 +241,6 @@ impl Backtrace {
                         resolve(ip as *mut c_void, sym);
                     }
                 }
-            }
-            if ip != 0 && frame.symbol_address() as usize == ip && self.actual_start_index == 0 {
-                self.actual_start_index = if inclusive { f + 1 } else { f };
             }
             frame.symbols = Some(symbols);
         }
