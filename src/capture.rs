@@ -137,13 +137,13 @@ impl Backtrace {
     /// enabled, and the `std` feature is enabled by default.
     #[inline(never)] // want to make sure there's a frame here to remove
     pub fn new() -> Backtrace {
-        Self::new_omitting(Self::new as usize)
+        Self::new_starting_from(Self::new as usize, true)
     }
 
     #[inline(never)]
-    pub fn new_omitting(ip: usize) -> Backtrace {
+    pub fn new_starting_from(ip: usize, inclusive: bool) -> Backtrace {
         let mut bt = Self::create(ip);
-        bt.resolve_omit(ip);
+        bt.resolve_starting_from(ip, inclusive);
         bt
     }
 
@@ -222,10 +222,10 @@ impl Backtrace {
     /// This function requires the `std` feature of the `backtrace` crate to be
     /// enabled, and the `std` feature is enabled by default.
     pub fn resolve(&mut self) {
-        self.resolve_omit(0);
+        self.resolve_starting_from(0, false);
     }
 
-    fn resolve_omit(&mut self, ip: usize) {
+    fn resolve_starting_from(&mut self, ip: usize, inclusive: bool) {
         let mut actual_start_index = None;
         for (f, frame) in self.frames.iter_mut().enumerate().filter(|(_, f)| f.symbols.is_none()) {
             let mut symbols = Vec::new();
@@ -247,7 +247,7 @@ impl Backtrace {
                 }
             }
             if ip != 0 && symbols.iter().any(|s| s.addr == Some(ip)) && self.actual_start_index == 0 {
-                self.actual_start_index = f + 1;
+                self.actual_start_index = if inclusive { f + 1 } else { f };
             }
             frame.symbols = Some(symbols);
         }
